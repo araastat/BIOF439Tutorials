@@ -16,3 +16,5 @@ Imports:
     mlbench,
     patchwork,
     learnr
+URL: https://github.com/araastat/BIOF439Tutorials
+BugReports: https://github.com/araastat/BIOF439Tutorials/issues
