@@ -1,5 +1,5 @@
 ---
-title: "Formative 2 (Week 2)"
+title: "Exploring ggplot2"
 output: 
   learnr::tutorial:
     progressive: true
@@ -16,7 +16,7 @@ library(ggplot2)
 library(mlbench)
 library(patchwork)
 knitr::opts_chunk$set(echo = FALSE, warning=F, message=F, error=T)
-
+beaches <- read_csv(system.file('extdata','beaches.csv', package='BIOF439Tutorials'))
 ```
 
 ## Loading a data package
@@ -430,6 +430,29 @@ ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() +
 ```{r grid-hint-2}
 ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() + 
   facet_grid(am ~ .)
+```
+
+### The beaches data
+
+The beaches data is already pre-loaded in this tutorial. 
+
+Write code below that would create a facetted plot of the temperature distribution, 
+with rows being years and columns being seasons. It should look something like this:
+
+```{r}
+ggplot(beaches, aes(x = temperature)) + 
+  geom_density()+
+  facet_grid(year ~ season_name)
+```
+
+```{r beaches, exercise = TRUE, exercise.lines = 8}
+
+```
+
+```{r beaches-solution}
+ggplot(beaches, aes(x = temperature)) + 
+  geom_density()+
+  facet_grid(year ~ season_name)
 ```
 
 ### Fancy plotting
