@@ -1,0 +1,18 @@
+Package: BIOF439Tutorials
+Title: Interactive tutorials for BIOF 439
+Version: 0.1.0.9000
+Authors@R: 
+    person(given = "Abhijit",
+           family = "Dasgupta",
+           role = c("aut", "cre"),
+           email = "adasgupta@araastat.com")
+Description: This provides tutorials for BIOF439 offered through FAES (www.faes.org) at NIH.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    readr,
+    ggplot2,
+    mlbench,
+    patchwork,
+    learnr

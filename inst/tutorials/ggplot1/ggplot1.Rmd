@@ -1,0 +1,449 @@
+---
+title: "Formative 2 (Week 2)"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+description: >
+  This is a walkthrough to play with different aspects of ggplot2
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(readr)
+library(ggplot2)
+library(mlbench)
+library(patchwork)
+knitr::opts_chunk$set(echo = FALSE, warning=F, message=F, error=T)
+
+```
+
+## Loading a data package
+
+You had installed and loaded the **mlbench** package into R as part of Formative 1 of 
+week 2. Load that package into your current R session.
+
+```{r}
+pacman::p_load(mlbench)
+data("PimaIndiansDiabetes2")
+```
+
+
+```{r load-package, exercise=TRUE}
+
+```
+
+To load a dataset from this package, you need to use a function called `data`. Use
+this package to load the `PimaIndianDiabetes2` dataset into R. You can then 
+see the first few lines of the dataset using the `head` function.
+
+```{r load-data, exercise=T}
+data(___)
+head(___)
+```
+
+## Univariate exploration (discrete variable)
+
+Let's first look at the distribution of the number of pregancies in this dataset
+
+```{r}
+ggplot(PimaIndiansDiabetes2, aes(x = pregnant)) + 
+  geom_bar(aes(fill = diabetes))
+```
+
+This is a bar plot that is displaying information from the `pregnant` column
+of the `PimaIndiansDiabetes2` dataset, with colors based on values in the `diabetes` column. 
+Let's try and recreate this plot. 
+
+### Create a basic bar plot
+
+
+```{r barplot, exercise = TRUE}
+library(____)
+
+ggplot(data = ___,
+       mapping = aes(
+         x = ___
+       )) +
+  geom_____()
+
+```
+
+```{r barplot-solution}
+library(ggplot2) # or library(tidyverse)
+
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = pregnant
+       )) +
+  geom_bar()
+```
+
+
+This should just be a bar plot with a single color. We're not displaying the diabetes status yet.
+
+### Add code to make the plot above, with separate (default) colors by diabetic status.
+
+```{r barplot2, exercise = TRUE}
+ggplot(data = ___,
+       mapping = aes(
+         x = ___
+       )) +
+  geom_____(_________)
+```
+
+```{r barplot2-hint-1}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = pregnant
+       )) +
+  geom_bar(aes(_____))
+```
+
+
+```{r barplot2-hint-2}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = pregnant
+       )) +
+  geom_bar(aes(fill = diabetes))
+```
+
+
+### Exercise: barplot options
+
+The `geom_bar` function has a `position` option to change how the bars for the
+groups are positioned relative to each other, e.g., `geom_bar(position = ____)`. 
+(**Hint:** Look at the documentation for `geom_bar` by typing `?geom_bar` in the console)
+
+```{r barplot-quiz}
+quiz(
+  question('What are possible options for `position`?',
+           answer('dodge', correct=TRUE),
+           answer('next'),
+           answer('fill', correct=TRUE),
+           answer('stack', correct=TRUE),
+           answer('default'),
+           answer('side')
+))
+```
+
+## Univariate exploration (continuous variable)
+
+```{r}
+plt1 <- ggplot(PimaIndiansDiabetes2, aes(x = mass, fill = diabetes))+
+  geom_density(alpha = 0.3)
+plt2 <- ggplot(PimaIndiansDiabetes2, aes(x = mass, color = diabetes))+
+  geom_histogram(fill = 'white')
+plt2 + plt1
+```
+
+We will develop two kinds of visualizations: histograms and density plots using
+the `mass` variable from `PimaIndiansDiabetes2`.
+
+### Creating a histogram
+
+A histogram is just another possible geometry in **ggplot2** that is applied to 
+continuous variables. Let's start by creating a histogram of `mass`. If you have
+trouble with the particular geometry function, look in the package documentation
+for possible functions. 
+
+```{r hist1, exercise = TRUE}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = _____
+       )) + 
+  geom_______()
+```
+
+```{r hist1-solution}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) + 
+  geom_histogram()
+```
+
+### Separate by group
+
+We'll now create two histograms on the same panel, one for diabetics, and one
+for non-diabetics
+
+```{r hist2, exercise = TRUE}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(____(color = ____))
+```
+
+```{r hist2-hint-1}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(____(color = diabetes))
+```
+
+```{r hist2-hint-2}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(aes(color = diabetes))
+```
+
+### Customize appearance
+
+Let's change the background of the histogram to white so we can see things better.
+
+```{r hist3, exercise=TRUE}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(aes(color = diabetes), ______ = 'white')
+```
+
+```{r hist3-solution}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(aes(color = diabetes), fill = 'white')
+```
+
+### Exercise
+
+```{r quiz2}
+quiz(
+  question("What aspect of a geometry does the option `color` control?",
+           answer("The border", correct=TRUE),
+           answer("The inside"),
+           answer("The background of the plot")
+     ))
+```
+
+> If a geometry doesn't have separate border and inside parts, like a line, the option `color` is used
+
+### Convert this to a density plot
+
+Eseentially the same code works to create a density plot, just changing the geometry. 
+Modify the following code to create density plots, keeping the same options.
+
+```{r dens, exercise=TRUE}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_histogram(aes(fill = diabetes))
+```
+
+```{r dens-solution}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_density(aes(fill = diabetes))
+```
+
+
+This hides one plot under the other, since, like a painter, it overlays one on the other. 
+
+### Transparency
+
+We can help "see through" the plots by adding an optional `alpha` value to the geometry. This 
+takes values from 0 (completely transparent) to 1 (completely opaque). Play around with the 
+`alpha` values to see how things change
+
+```{r dens2, exercise = TRUE, exercise.eval=TRUE}
+ggplot(data = PimaIndiansDiabetes2,
+       mapping = aes(
+         x = mass
+       )) +
+  geom_density(aes(fill = diabetes), alpha = 0.7)
+```
+
+
+## Bivariate exploration
+
+We'll look at the distribution of women's ages by the number of pregnancies they have had. 
+
+### Create a boxplot 
+
+```{r bp1, exercise=TRUE, exercise.eval=TRUE}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = pregnant,
+         y = age
+       )) + 
+  geom_boxplot()
+```
+
+Ooh!!! This is not what we wanted!!
+
+### Create a boxplot, 2nd attempt
+
+It turns out that the `pregant` variable is of type `numeric`, while what we 
+need is a `factor` type, which represents categorical variables. We can do this 
+conversion on the fly.
+
+```{r, echo=TRUE}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = as.factor(pregnant),
+         y = age
+       )) + 
+  geom_boxplot()
+```
+
+Also, instead of those outlier points, let's take the whisker all the 
+way to the end, so that it represents the maximum value. 
+
+```{r, echo = TRUE}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = as.factor(pregnant),
+         y = age
+       )) + 
+  geom_boxplot(coef=NULL) # Changed here
+```
+
+### Comparing groups
+
+We've already seen how to create groups with different colors on a single pane. 
+
+Modify the code below so we have side-by-side boxplots of different colors for
+diabetics and non-diabetics
+
+```{r bp3, exercise=TRUE, exercise.eval=TRUE}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = as.factor(pregnant),
+         y = age
+       )) + 
+  geom_boxplot(coef=NULL) 
+```
+
+```{r bp3-solution}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = as.factor(pregnant),
+         y = age
+       )) + 
+  geom_boxplot(aes(fill = diabetes), coef=NULL)
+```
+
+### Cleaning up
+
+Let's modify the axis labels to English rather than code, since we 
+modified a variable on-the-fly.
+
+```{r bp4, exercise=TRUE}
+ggplot(data = PimaIndiansDiabetes2, 
+       mapping = aes(
+         x = as.factor(pregnant),
+         y = age
+       )) + 
+  geom_boxplot(aes(fill = diabetes), coef=NULL) + 
+  labs(x = ______, y = _______, main = _______)
+```
+
+### Exercise
+
+```{r q3}
+quiz(
+  question("If you have two continuous variables to compare, what geometries could you use?",
+           answer('geom_bar'),
+           answer('geom_point', correct=TRUE),
+           answer('geom_line', correct=TRUE),
+           answer('geom_violin'),
+           answer('geom_col'),
+           answer('geom_smooth', correct=TRUE))
+)
+```
+
+
+## Facets
+
+We saw with our histograms that layering histograms on top of each other doesn't
+really work, especially if we have more than two groups.
+
+We can split the groups up into facets to see each better. Let's explore
+the age distributions by number of pregnancies, using density plots. 
+
+First, let's see how the one-panel solution looks, even with transparency
+
+```{r, echo=TRUE}
+ggplot(PimaIndiansDiabetes2, 
+       aes(x = age, fill = as.factor(pregnant)))+
+  geom_density(alpha = 0.3)
+```
+
+> Note, I'm  not using `data=` and `mapping=` here. R functions can take arguments 
+by position, and I know (you know too, now) that the first argument of `ggplot` is `data` and 
+the second argument is `mapping`. So I can omit those and just write them out. However, 
+if you want to put in function arguments out of order, you must name them using `data=` or whatever
+the corresponding argument is.
+
+### Splitting out by group
+
+We can explode this plot out into facets using `facet_wrap`.
+
+```{r fac, exercise=TRUE}
+ggplot(PimaIndiansDiabetes2,
+       aes(x = age))+  # Note, no more `fill`
+  geom_density() + 
+  facet_wrap(~as.factor(pregnant))
+```
+
+Change the above code to limit the grid to 4 columns
+
+```{r fac-solution}
+ggplot(PimaIndiansDiabetes2,
+       aes(x = age))+  # Note, no more `fill`
+  geom_density() + 
+  facet_wrap(~as.factor(pregnant), ncol=4)
+```
+
+### Faceting by multiple variables
+
+The `facet_grid` function provides much more control over faceting behavior. 
+
+```{r grid, exercise = TRUE, exercise.eval=TRUE}
+ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() + 
+  facet_grid(am ~ gear)
+```
+
+Play around with this code by 
+
+1. replacing `am` with `.`
+1. replacing `gear` with `.`
+
+```{r grid-hint-1}
+ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() + 
+  facet_grid(. ~ gear)
+```
+
+
+```{r grid-hint-2}
+ggplot(mtcars, aes(x = mpg, y = wt)) + geom_point() + 
+  facet_grid(am ~ .)
+```
+
+### Fancy plotting
+
+```{r fancy, exercise = TRUE, exercise.eval=TRUE}
+ggplot(mpg, aes(drv, model)) +
+  geom_point() +
+  facet_grid(manufacturer ~ ., scales = "free", space = "free") +
+  theme(strip.text.y = element_text(angle = 0))
+```
+
+Evaluate each option on your own, using the help file for `facet_grid`, 
+to see how it affects the plot
+
+
+
+
