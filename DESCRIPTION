@@ -15,6 +15,7 @@ Imports:
     ggplot2,
     mlbench,
     patchwork,
-    learnr
+    learnr,
+    gghighlight
 URL: https://github.com/araastat/BIOF439Tutorials
 BugReports: https://github.com/araastat/BIOF439Tutorials/issues

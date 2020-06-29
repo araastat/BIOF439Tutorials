@@ -1,0 +1,66 @@
+---
+title: "Dashboard for WHO data"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    source_code: embed
+    theme: yeti
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(gghighlight)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+cleaned_data <- who %>% 
+  pivot_longer(cols = starts_with("new"),
+               names_to = c('diagnosis','gender','age'),
+               names_prefix = 'new_', # this gets removed first, so don't include in regex
+               names_pattern = '([:lower:]+)_([mf])([:digit:]+)',
+               values_to = 'counts')
+
+by_yr_diagnosis <- cleaned_data %>% 
+  group_by(country, year, diagnosis) %>% 
+  summarize(counts = sum(counts, na.rm=T))  %>% # remove missing values before summing
+  ungroup() %>% 
+  filter(year >= 2000) %>% 
+    mutate(diagnosis = fct_recode(diagnosis,
+                                "Relapse" = "rel",
+                                "Neg Pulm Smear" = "sn",
+                                "Pos Pulm Smear" = 'sp',
+                                "Extrapulmonary" = 'ep')) %>% 
+  filter(counts > 0)
+
+
+```
+
+
+Column {.sidebar}
+---------------------
+```{r}
+selectInput("countries", h3("Country"),
+            choices = sort(unique(by_yr_diagnosis$country)))
+
+```
+
+
+Column
+------------------------
+
+### Change in TB counts over time (Data source: [https://www.who.int/tb/country/data/download/en](https://www.who.int/tb/country/data/download/en))
+```{r}
+renderPlot({
+  ggplot(by_yr_diagnosis,
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  facet_wrap(~diagnosis, nrow=2) +
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic() + 
+  gghighlight(country==input$countries, label_key = country,
+              use_group_by = FALSE)
+})
+```
+
+

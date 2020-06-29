@@ -1,0 +1,180 @@
+---
+title: "Data cleaning: An example using WHO data"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE, message=F, warning=F)
+library(tidyverse)
+library(broom)
+
+```
+
+## The data
+
+A subset of data from the World Health Organization (WHO) Global Tuberculosis Report
+is included in the **tidyr** package. This data comprises counts of new TB cases recorded by group, for different countries and years. You can look at the details of this data by
+typing `help(tidyr::who)` in the R console (you may need to open a separate instance of RStudio to do this,
+if you're running RStudio with version less than 1.3)
+
+Let's take a peek at this data
+
+
+**About the data**
+
+```{r, echo=FALSE}
+data(who)
+who %>% summarise_all(class) %>% 
+  gather(Variable, Type)
+```
+
+**Top 3 rows**
+
+```{r, echo=FALSE}
+head(who, 3)
+```
+
+We can see two things immediately
+
+1. There are columns that contain single pieces of information (number of TB cases) but the group information is in the column names. It is coded as
+    + `new_`, followed by
+    + method of diagnosis (`rel`,`sn`, `sp`, or `ep`), followed by
+    + gender (`f` or `m`), followed by 
+    + age group (`014`, `1525`, etc)
+1. There is a naming inconsistency, where, for the `rel` variables, we have `newrel_...` instead of `new_rel_...`
+
+## First, we fix names
+
+If the naming pattern is consistent, it will help us with using `separate` later. So let's fix this now.
+
+```{r, echo=TRUE}
+names(who) <- str_replace(names(who), 'newrel','new_rel')
+names(who) # These are he column names
+```
+
+> Yes, we just changed something in an in-built data set. You'll see that the data set now shows up in 
+the Environment pane, since it's now local to our session. Don't worry, you haven't destroyed the original data. You can access it either by removing the local copy (`rm(who)`, or using the Environment pane), or directly accessing
+the original data by `tidyr::who`
+
+## Next we pivot
+
+The first step in tidying the data is to create 3 columns for method of diagnosis, gender and age group, corresponding to each country and year. 
+
+1. Identifier columns are `country`, `iso2` and `iso3`
+1. The rest are columns we want to pivot
+
+```{r pivot, exercise=TRUE}
+cleaned_data <- who %>% 
+  gather(key = variable, value = counts, ____________)
+```
+
+<div id="pivot-hint">
+There are a couple of ways you could specify the columns. One is using the `_____:_____` 
+notation. The other takes advantage of the fact that each of those variables starts with `new_`, 
+and so we could use `starts_with("new_")`
+</div>
+
+> Think about the different ways you can do this and how that might inform your own choice 
+of variable names when you create your own data. You may be able to decide on a naming 
+pattern that is both informative and makes data munging easier
+
+## Separating columns
+
+We have to separate the `variable` column into 3 columns: `diagnosis`, `sex` and `age`. 
+One challenge to this is that the separators are different for the three parts.
+
+### Method 1: Successive `separate`'s
+
+My first attempt
+was to do this in two steps
+
+```{r sep1, exercise = TRUE}
+cleaned_data <- who %>% 
+  gather(key = variable, value = counts, starts_with('new')) %>% 
+  separate(variable, into = c('diagnosis', 'gender_age'), sep = ____) %>% 
+  separate(gender_age, into = c('gender', 'age'), sep = ____)
+```
+
+> Remember that the pipe takes the output at the previous step and makes it the input at
+the next step. So, after the first `separate`, we have a separate variable for diagnosis, and 
+so at the second `separate`, we only have to separate out gender and age groups
+
+> The different possibilities for `sep` are available in the documentation for `separate`
+
+```{r sep1-solution}
+cleaned_data <- who %>% 
+  gather(key = variable, value = counts, starts_with('new')) %>% 
+  separate(variable, into = c('diagnosis', 'gender_age'), sep = '_') %>% 
+  separate(gender_age, into = c('gender', 'age'), sep = 1)
+```
+
+### Regular expressions
+
+Regular expressions can provide a powerful tool in extracting information from 
+complex string patterns. 
+
+>Learning regular expressions is beyond the scope of this class, 
+but a starting point in working with regular expressions might be [here](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285) or [here](https://github.com/rstudio/cheatsheets/raw/master/regex.pdf). The R documentation
+for regular expressions is also quite good (`?regex`).
+
+So what is the pattern for the elements in `variable`? 
+
+```
+new_{diagnosis}_{gender}{age group}
+```
+
+where we know that 
+
++ diagnosis is a set of lower case letters
++ gender is `m` or `f`
++ age group is a set of numbers
+
+For each of these, there is a regular expression that would match them (there are multiple choices, I'm putting down the simplest one to me).
+
+Variable    | Nature       | Regular expression | Explanation
+----------- | ------------ | ------------------ | -----------
+diagnosis    | lower case letters | `[:lower:]+` | One or more consecutive lower case letters (a-z)
+gender | single character (m/f) | `[mf]` | one of m and f
+age_group | set of numbers  | `[:digit:]+` | one or more consecutive digits (0-9)
+
+
+### Method 2: `extract`
+
+We can use the function `tidyr::extract` to use regular expressions as a way to 
+separate the columns of `variable`. It utilizes the regular expression concept of groups of
+patterns, demarcated by `()`, to figure out what the separate pieces are. This idea is 
+very much like what we wrote earlier for the pattern of entries in `variable`.
+
+```{r, echo=TRUE}
+cleaned_data <- who %>% 
+  gather(key = variable, value = counts, starts_with('new')) %>% 
+  extract(variable, into = c('diagnosis','gender','age'),
+          regex = 'new_([:lower:]+)_([mf])([:digit:]+)')
+head(cleaned_data)
+```
+
+Pretty cool!!!
+
+### Method 3: `pivot_longer`
+
+The new `pivot_longer` function in **tidyr** is quite flexible, and allows you to 
+combine both the `gather` and `extract` steps in one go.
+
+```{r, echo=TRUE}
+cleaned_data <- who %>% 
+  pivot_longer(cols = starts_with("new"),
+               names_to = c('diagnosis','gender','age'),
+               names_prefix = 'new_', # this gets removed first, so don't include in regex
+               names_pattern = '([:lower:]+)_([mf])([:digit:]+)',
+               values_to = 'counts')
+head(cleaned_data)
+```
+
+
+

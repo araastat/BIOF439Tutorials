@@ -1,0 +1,200 @@
+---
+title: "Visualizing the WHO data"
+output: 
+    learnr::tutorial:
+      progressive: true
+      allow_skip: true
+      css: css/style.css
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(tidyverse)
+library(gghighlight)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+cleaned_data <- who %>% 
+  pivot_longer(cols = starts_with("new"),
+               names_to = c('diagnosis','gender','age'),
+               names_prefix = 'new_', # this gets removed first, so don't include in regex
+               names_pattern = '([:lower:]+)_([mf])([:digit:]+)',
+               values_to = 'counts')
+```
+
+## Introduction
+
+We created a cleaned dataset in the tutorial _Data cleaning: An example using WHO data_. You can run it using `learnr::run_tutorial('data_cleaning_who', package = "BIOF439Tutorials")`. 
+
+The final `cleaned_data` is loaded for this tutorial. You can explore it below.
+
+```{r explore, exercise=TRUE, exercise.lines=20, exercise.eval=TRUE}
+head(cleaned_data, 4)
+```
+
+
+
+## Data munging
+
+
+We will create two data sets from the cleaned data. 
+
+1. Summarize TB counts by country, year, and diagnosis
+1. Summarize TB counts by country and year
+
+**TB counts by country, year, and diagnosis**
+
+```{r grp1, exercise = TRUE}
+by_yr_diagnosis <- cleaned_data %>% 
+  group_by(______, ______, _______) %>% 
+  summarize(counts = sum(_________, na.rm=T)) %>% # remove missing values before summing
+  ungroup()
+
+by_yr <- by_yr_diagnosis %>% 
+  group_by(_______, ________) %>% 
+  summarize(counts = sum(_______, na.rm=T)) %>% 
+  ungroup()
+```
+
+```{r grp1-solution}
+by_yr_diagnosis <- cleaned_data %>% 
+  group_by(country, year, diagnosis) %>% 
+  summarize(counts = sum(counts, na.rm=T))  %>% # remove missing values before summing
+  ungroup()
+
+by_yr <- by_yr_diagnosis %>% 
+  group_by(country, year) %>% 
+  summarize(counts = sum(counts, na.rm=T)) %>% 
+  ungroup()
+```
+
+```{r grouprun1, echo=FALSE}
+by_yr_diagnosis <- cleaned_data %>% 
+  group_by(country, year, diagnosis) %>% 
+  summarize(counts = sum(counts, na.rm=T))  %>% # remove missing values before summing
+  ungroup()
+
+by_yr <- by_yr_diagnosis %>% 
+  group_by(country, year) %>% 
+  summarize(counts = sum(counts, na.rm=T)) %>% 
+  ungroup()
+```
+
+## Visualizing temporal patterns
+
+### Line plots by country
+
+There are a lot of countries, so I'll just plot a line for 
+each country without using colors, since colors won't add much.
+
+```{r, echo=TRUE}
+ggplot(by_yr, 
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic()
+```
+
+
+OK, all the action is in the later years. So let's restrict ourselfs 
+to the years 2000 and after
+
+```{r}
+by_yr <- by_yr %>% filter(year >= 2000)
+by_yr_diagnosis <- by_yr_diagnosis %>% filter(year >= 2000)
+
+ggplot(by_yr, 
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic()
+```
+
+### Facets
+
+Let's separate it out by diagnosis to see if the patterns are any clearer
+
+```{r grp2,  exercise=TRUE}
+ggplot(by_yr_diagnosis,
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  facet_wrap(_______, nrow=2) + 
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic()
+```
+```{r grp2-solution}
+ggplot(by_yr_diagnosis,
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  facet_wrap(~diagnosis, nrow=2) + 
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic()
+```
+
+Still, the main issue is that there are too many lines, and we can't easily discern what each country's pattern is. 
+
+### Highlighting countries
+
+THe **gghighlight** package provides a neat solution to our problem. It allows you to decide which aspect of the plot you want to highlight by filtering out some of the data, and puts the rest in the shade. 
+
+I'll also do a bit of data munging to make the groups more understandable
+
+```{r, echo=TRUE}
+library(gghighlight)
+
+by_yr_diagnosis <- by_yr_diagnosis %>% 
+  mutate(diagnosis = fct_recode(diagnosis,
+                                "Relapse" = "rel",
+                                "Neg Pulm Smear" = "sn",
+                                "Pos Pulm Smear" = 'sp',
+                                "Extrapulmonary" = 'ep')) %>% 
+  filter(counts > 0)
+  
+ggplot(by_yr_diagnosis,
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  facet_wrap(~diagnosis, nrow=2) + 
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic() + 
+  gghighlight(country=='Afghanistan', label_key = country)
+```
+
+## Interactive exploration
+
+Since **learnr** runs **shiny** underneath, we can take advantage to
+create some interactivity. You can also do this using **flexdashboard**, if you want.
+
+```{r}
+selectInput("countries", h3("Country"),
+            choices = sort(unique(by_yr_diagnosis$country)))
+plotOutput("lineplot")
+```
+
+```{r, context='server'}
+output$lineplot <- renderPlot({
+  ggplot(by_yr_diagnosis,
+       aes(x = year, y = counts + 1, group = country))+
+  geom_line() + 
+  facet_wrap(~diagnosis, nrow=2) +
+  scale_y_log10(name='Number of TB cases',
+                labels = scales::comma_format()) + 
+  labs(x = 'Year')+
+  theme_classic() + 
+  gghighlight(country==input$countries, label_key = country)
+})
+```
+
+> The source code creating this interactive visualization, set in the 
+context of **flexdashboard* and a dashboard, is available at `system.file('examples/shiny_app_who.Rmd', package='BIOF439Tutorials')`. 
+You can run this and see the source code from a link on the page, using
+`rmarkdown::run(system.file('examples/shiny_app_who.Rmd',package="BIOF439Tutorials"))`
+
