@@ -1,0 +1,77 @@
+---
+title: "Data cleanining: An example using WHO data"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(broom)
+```
+
+## The data
+
+A subset of data from the World Health Organization (WHO) Global Tuberculosis Report
+is included in the **tidyr** package. This data comprises counts of new TB cases recorded by group, for different countries and years. You can look at the details of this data by
+typing `help(tidyr::who)` in the R console (you may need to open a separate instance of RStudio to do this,
+if you're running RStudio with version less than 1.3)
+
+Let's take a peek at this data
+
+
+**About the data**
+
+```{r, echo=FALSE}
+data(who)
+who %>% summarise_all(class) %>% 
+  gather(Variable, Type)
+```
+
+**Top 3 rows**
+
+```{r, echo=FALSE}
+head(who, 3)
+```
+
+We can see two things immediately
+
+1. There are columns that contain single pieces of information (number of TB cases) but the group information is in the column names. It is coded as
+    + `new_`, followed by
+    + method of diagnosis (`rel`,`sn`, `sp`, or `ep`), followed by
+    + gender (`f` or `m`), followed by 
+    + age group (`014`, `1525`, etc)
+1. There is a naming inconsistency, where, for the `rel` variables, we have `newrel_...` instead of `new_rel_...`
+
+## First, we fix names
+
+If the naming pattern is consistent, it will help us with using `separate` later. So let's fix this now.
+
+```{r, echo=TRUE}
+names(who) <- str_replace(names(who), 'newrel','new_rel')
+names(who) # These are he column names
+```
+
+> Yes, we just changed something in an in-built data set. You'll see that the data set now shows up in 
+the Environment pane, since it's now local to our session. Don't worry, you haven't destroyed the original data. You can access it either by removing the local copy (`rm(who)`, or using the Environment pane), or directly accessing
+the original data by `tidyr::who`
+
+## Next we pivot
+
+The first step in tidying the data is to create 3 columns for method of diagnosis, gender and age group, corresponding to each country and year. 
+
+1. Identifier columns are `country`, `iso2` and `iso3`
+1. The rest are columns we want to pivot
+
+```{r pivot, exercise=TRUE}
+cleaned_data <- who %>% 
+  pivot_longer(cols = ________:________,
+               names_to = 'variable',
+               values_to = 'counts')
+```
+
