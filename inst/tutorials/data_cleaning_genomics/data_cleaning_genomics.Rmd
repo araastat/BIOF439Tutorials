@@ -1,0 +1,468 @@
+---
+title: "Data cleaning : An example from genomics"
+output: 
+  learnr::tutorial:
+    css: css/style.css
+    allow_skip: true
+    progressive: false
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+library(tidyverse)
+```
+
+## Introduction
+
+The dataset we will clean was published in [Brauer( 2008)](https://www.molbiolcell.org/doi/full/10.1091/mbc.e07-08-0779), where they used
+microarrays to study the relationship between growth rate and genome-wide gene expression in 
+36 yeast cultures which were subject to restrictions of one of 6 nutrients: glucose (G), ammonium (A), sulfate (S), phospate (P), uracil (U) and leucine (L). Each culture was also subject to different growth rates. The objectives of this study were:
+
+1. Finding genes that raise or lower activity in response to growth rate,
+1. Finding geres that respond differently when different nutrients are being limited.
+
+> I was introduced to this dataset and exercise on David Robinson's [blog](http://varianceexplained.org/r/tidy-genomics/). 
+
+## Grab the raw data
+
+```{r ex1, echo=TRUE}
+url <- "http://varianceexplained.org/files/Brauer2008_DataSet1.tds"
+raw_data <- read_delim(url, delim='\t')
+```
+Fill in the blanks so that the first 4 lines of the dataset are displayed
+
+```{r ex11, exercise=TRUE}
+head(raw_data, ___)
+```
+
+```{r ex11-solution}
+head(raw_data, 4)
+```
+
+
+This dataset contains annotations (`NAME`) for each gene and columns whose names specify
+the nutrient being restricted and the growth factor level for the culture. <p>
+Use the arrow on the right of the column names to  go through the columns. <p>
+Note that since this dataset is stored as a tibble, you see the data types of each column
+just under their column names
+
+## Look at the annotation data
+
+Now take a look at the annotation data in the `NAME` column. Extract the first 6 elements of that column.
+
+```{r ex2, exercise=TRUE}
+raw_data$_____[__:__]
+```
+```{r ex2-solution}
+raw_data$NAME[1:6]
+```
+
+We can see that there are multiple pieces of information in each cell, representing different 
+ontologic elements. In order, these are the gene name, the Biological Process (BP) pathway, the Molecular Function (MF) pathway, the systematic ID, and another ID number. 
+
+## Let us count the ways this data is untidy
+
++ **Multiple data elements in a single column (`NAME`): ** We really need to separate these out if we want to use these information in analyses.
++ **Restricted nutrient and growth factor captured in column names, not in cells:** This wide format is very common in biological data, where data is stored as one row per gene, one column per experiment, rather than the tidy form that is easier to analyze, one row per gene per sample.
+
+We need to take the time to get the data in shape up front, so that our downstream analyses will be easier.
+
+## Separate annotation into columns
+
+First, we will separate the annotations in the `NAME` column into separate columns.<p>
+The `separate` function is meant for this task. 
+
+The `separate` function takes 
+
++ the dataset as its first argument, 
++ the column to undergo
+the separation as the second argument, 
++ an array of the new names as the third argument and 
++ the 
+character string that separates the different pieces a separate argument. 
+
+Fill in the blanks below. <p> One quirk you need to note is that the separator here involves the `|` character. This 
+character is used in R to denote _or_ in conditional evaluations. So it needs to be "**escaped**", which means
+that you need to put two `\` characters before each one to let R know you want the character `|` and not the 
+R operator. 
+
+```{r sep1, exercise=TRUE}
+cleaned_data <- separate(_______, 
+                         _____, 
+                         c('name','BP','MF','systematic_name','number'), 
+                         sep = "___")
+```
+```{r sep1-hint-1}
+cleaned_data <- separate(_______,
+                         _______,
+                         c('name','BP','MF','systematic_name', 'number'),
+                         sep = "\\|\\|")
+```
+```{r, sep1-hint-2}
+cleaned_data <- separate(raw_data,
+                         NAME,
+                         c('name','BP','MF','systematic_name', 'number'),
+                         sep = "\\|\\|")
+```
+
+
+## Using pipes
+
+
+You can replace the code we created with code that written as a **pipe**, i.e., using
+the `%>%` operator to link functions.
+
+The rules for the pipe operator are
+
+1. First element of the pipe has to be a _noun_, like a data set, array or object
+1. The subsequent functions all have to take the output of the previous operation as its **first argument**
+
+In this case, we would start with the raw data and pipe it in to the `separate` function, which takes
+a data set as its first argument, hence is compatible with the pipe operation.
+
+Note that in RStudio, there is a convenient shortcut for writing `%>%`. It is `Ctrl/Cmd + Shift + M`.
+
+Fill in the blanks, then add a line of code to print out the first four lines of the new data set
+
+```{r sep_pipe, exercise=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(_______,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|")
+```
+
+Note that the `separate` function now uses one less argument. In a pipe, the specification of the function starts
+from the **second** argument, since the first argument is the output from what's to the left of `%>%`, in this case, the data set. Now we're going to keep building this pipe to get us to the final clean dataset
+
+```{r, sep_pipe-solution}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|")
+
+head(cleaned_data, 4)
+```
+
+> One thing to note in most tidyverse functions is that the names of variables don't need to be quoted. This is 
+a nice convenience, and is technically called *Non-Standard Evaluation (NSE)*
+
+## Cleaning the new variables
+
+```{r prep-clean, include=FALSE}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|")
+
+```
+
+
+Let's look at the new variables in raw form. 
+
+```{r, results='markup'}
+cleaned_data %>% 
+  select(name:MF) %>% 
+  slice(1) %>% 
+  print()
+```
+
+
+The important thing to note here is that there are spaces at the beginning and end of the 
+character elements. This is a problem that needs fixing.
+
+
+### Trim strings
+
+The **stringr** package has a function `str_trim` which removes blank spaces at the beginning and end of a character string. 
+
+Our job is to **change** each of these 5 variables so that the spaces are removed before and after each entry,
+and save it back to `cleaned_data`. We'll use a scoped form (`*_at`) of a tidyverse verb to do this. This 
+will apply the verb only to certain columns of the data set. Utilize the documentation as needed.
+
+```{r trim1, exercise=TRUE, exercise.setup = "prepare_cleaned"}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|") %>% 
+  ________at(vars(______:_______), str_trim)
+```
+```{r trim1-hint-1}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|") %>% 
+  mutate_at(vars(_______:_______), str_trim)
+```
+```{r trim1-hint-2}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|") %>% 
+  mutate_at(vars(name:number), str_trim)
+```
+
+```{r trim1-run, include=FALSE}
+cleaned_data <- raw_data %>% 
+  separate(NAME,
+            c('name','BP','MF','systematic_name', 'number'),
+            sep = "\\|\\|") %>% 
+  mutate_at(vars(name:number), str_trim)
+```
+
+
+```{r ex4, include=FALSE}
+cleaned_data <- cleaned_data %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) #<<
+```
+
+
+## Remove some columns
+
+We really don't need the `number`, `GID`, `YORF` and `GWEIGHT` columns. We can use 
+the `select` function to remove them. The way to do this is to specify a minus sign
+before the names. 
+
+
+```{r ex5, exercise=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:number), str_trim) %>% 
+  select(-______, -________, -________, -________) #<<
+head(cleaned_data)
+```
+
+```{r ex5-solution}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:number), str_trim) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT)
+head(cleaned_data)
+```
+
+
+---
+
+## Re-arrange by pivoting {data-progressive=TRUE}
+
+We've solved one of the two problems in this data. Now let's tackle the other one
+
+We have 36 variables, one for each nutrient/growth factor combination. We need to 
+take these columns and make the data so that each nutrient/growth factor combination for 
+each gene is one row. 
+
+The main idea of `gather` and `spread` (or more recently, `pivot_longer` and `pivot_wider`)
+can be captured in the following animation
+
+```{r, out.width='50%'}
+knitr::include_graphics('images/tidyr-spread-gather.gif')
+```
+
+### Understanding keys and values
+
+In this example we need to take several columns and reduce them into 2 columns. One
+column will hold the column names and the other will hold the column values. The remaining 
+columns that we don't want to manipulate (traditionally called the ID or identifier columns)
+get repeated, so that the inter-relationships between the identifier variables and data from each column remain intact.
+
+For `gather`, the `key` is the name of the variable that will hold the original column names, 
+and `value` is the name of the variable that will hold the original column values. In addition, 
+we'll specify the columns that we want to do this pivoting operation on, or, if easier, the columns that we want to ignore, namely, the identifier columns
+
+
+```{r ex6, exercise=TRUE, exercise.eval=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(key = sample, value = expression, G0.05:U0.3) 
+head(cleaned_data, 3)
+```
+
+Note that all those columns have been reduced down to two columns, `sample` and `expression`. 
+You can change the values in `head` or just print `cleaned_data` to see what has happened. 
+
+> Notice how we specified the columns we wanted to pivot using the `____:____` notation. This 
+is a really convenient shortcut to say, consider all the **consecutive** columns starting with `G0.05` and ending at `U0.3`. This notation works in `select`, and all the `*_at` functions. For the latter, you have to wrap the expression in the function `vars`, i.e., `mutate_at(vars(G0.05:U0.3), mean)`, for example
+---
+
+### Exercise
+
+Try to do this same operation with `pivot_longer`, using the documentation to see if 
+you can figure it out.
+
+```{r pl, exercise=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  pivot_longer(___) # There are several pieces that go in this
+```
+
+## Separate columns, again
+
+If you saw the `sample` column, you realize that it contains two pieces of information --
+the nutrient and the growth factor. Tidy data requires each cell to contain only one piece of 
+information. So we need to split this column up again into two columns. 
+
+Our old friend `separate` to the rescue!!
+
+I've given you the basic structure. Now add one element to the `separate` function 
+that will also convert the growth factor to a numeric column (the default is to 
+keep it a string, which won't help our visualizations)
+```{r ex7, exercise=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(sample, expression, G0.05:U0.3) %>% 
+  separate(______, into=c("nutrient", "rate"), sep=1, ______=_______) #<<
+head(cleaned_data)
+```
+
+> The `sep` option in `separate` can take two kinds of inputs. 
+>
+>If character, sep is interpreted as a [regular expression](https://medium.com/factory-mind/regex-tutorial-a-simple-cheatsheet-by-examples-649dc1c3f285). More basically, it can be a character string that separates the different pieces.
+>
+If numeric, sep is interpreted as character positions to split at. Positive values start at 1 at the far-left of the string; negative value start at -1 at the far-right of the string. The length of sep should be one less than into.
+
+## Get rid of rows with missing expression or name
+
+Almost done!!
+
+Finally, let's get rid of rows where there are no expression values, nor no systematic name. To
+get rid of **rows**, we use `filter`. 
+
+> To deal with columns, we use `select`
+
+First, let's see how we might write the conditions that will determine what rows will
+be **kept**. The two conditions we have stated are (a) there has to be non-missing expression, and (b) there has to be non-missing systematic name
+
+In this data, the `systematic_name` is a character variable, and the missing values are not denoted
+`NA` (though we could have transformed the variable to make it so) but as empty character strings (`''`). 
+
+The missing values in the `expression` variable are, however, denoted by `NA`, and so we could test 
+for which values are missing by `is.na(expression)`. This would give a TRUE or FALSE for each entry in
+that column depending on whether it is missing or not. Since we want the opposite, that is, when an entry is **not** missing, we _negate_ the test by adding an exclamation point (`!`) to the test, i.e. `!is.na(expression)`. 
+
+The comparison tests that are usually done are as follows:
+
+| Operator | Meaning                          |
+|----------|----------------------------------|
+| ==       | Equals                           |
+| !=       | Not equals                       |
+| > / <    | Greater / less than              |
+| >= / <=  | Greater or equal / Less or equal |
+| !        | Not                              |
+| %in%     | In a set                         |
+
+Combining comparisons
+
+| Operator   | Meaning |
+|------------|---------|
+| &          | And     |
+| &#124;       | Or      |
+
+Try to fill in the blanks below. One hint: you can separate several conditions by commas, and
+`filter` will treat them as `and`.
+
+```{r ex8, exercise=TRUE}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(sample, expression, G0.05:U0.3) %>% 
+  separate(sample, c("nutrient", "rate"), sep=1, convert = TRUE) %>% 
+  filter(______, ________)
+```
+
+```{r ex8-hint-1}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(sample, expression, G0.05:U0.3) %>% 
+  separate(sample, c("nutrient", "rate"), sep=1, convert = TRUE) %>% 
+  filter(systematic_number != '', ________)
+```
+
+```{r ex8-hint-2}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(sample, expression, G0.05:U0.3) %>% 
+  separate(sample, c("nutrient", "rate"), sep=1, convert = TRUE) %>% 
+  filter(systematic_number != '', !is.na(expression))
+```
+
+
+
+## Visualize
+
+```{r finalcleaned}
+cleaned_data <- raw_data %>% 
+  separate(NAME, c("name", "BP", "MF", "systematic_name", "number"), 
+           sep = "\\|\\|") %>% 
+  mutate_at(vars(name:systematic_name), funs(stringr::str_trim)) %>% 
+  select(-number, -GID, -YORF, -GWEIGHT) %>% 
+  tidyr::gather(sample, expression, G0.05:U0.3) %>% 
+  separate(sample, c("nutrient", "rate"), sep=1, convert = TRUE) %>% 
+  filter(systematic_name != '', !is.na(expression))
+```
+
+We now have a clean data set. Let's do a quick visualization. 
+
+I want a visualization just of genes involved in leucine biosynthesis (in `BP`),
+set in several panels, one for each gene, plotting expression level against growth rate, 
+colored by the restricted nutrient, with a straight line fit through the points for each nutrient. 
+
+The final plot should look something like this
+
+
+```{r ex9, eval=F, echo=FALSE, fig.height=3, fig.width=5,fig.pos='center'}
+cleaned_data %>%
+  filter(BP == "leucine biosynthesis") %>%
+  ggplot(aes(rate, expression, color = nutrient)) + #<<
+  geom_point() +#<<
+  geom_smooth(method = "lm", se = FALSE) + #<<
+  facet_wrap(~name , nrow=1) + 
+  labs(x = 'Growth rate', y = 'Gene expression', color = 'Nutrient')+
+  theme(legend.position='bottom') 
+```
+
+What are the different pieces in this puzzle?
+
+1. Filter the data to only keep those genes involved in leucine biosynthesis
+1. Draw scatter plots facetted by gene name
+1. To draw the straight line, you can use `geom_smooth(method = 'lm')`. The `lm` here
+stands for _linear model_, i.e. a linear regression
+1. To put the legend at the bottom, you can use `theme(legend.position = "bottom")`
+
+Please reproduce this graph below.
+
+```{r graph, exercise=TRUE, exercise.lines = 20, exercise.setup='finalcleaned'}
+
+```
+
+```{r graph-solution}
+cleaned_data %>%
+  filter(BP == "leucine biosynthesis") %>%
+  ggplot(aes(rate, expression, color = nutrient)) + #<<
+  geom_point() +#<<
+  geom_smooth(method = "lm", se = FALSE) + #<<
+  facet_wrap(~name , nrow=1) + 
+  labs(x = 'Growth rate', y = 'Gene expression', color = 'Nutrient')+
+  theme(legend.position='bottom') 
+
+```
+

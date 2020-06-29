@@ -36,7 +36,7 @@ data("PimaIndiansDiabetes2")
 ```
 
 To load a dataset from this package, you need to use a function called `data`. Use
-this package to load the `PimaIndianDiabetes2` dataset into R. You can then 
+this package to load the `PimaIndiansDiabetes2` dataset into R. You can then 
 see the first few lines of the dataset using the `head` function.
 
 ```{r load-data, exercise=T}
