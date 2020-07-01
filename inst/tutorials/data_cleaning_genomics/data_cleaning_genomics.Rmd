@@ -6,12 +6,17 @@ output:
     allow_skip: true
     progressive: false
 runtime: shiny_prerendered
+description: >
+  This tutorial walks through the data tidying process using the example of a genomics
+  dataset published by Brauer, et al (2008)
 ---
 
 ```{r setup, include=FALSE}
 library(learnr)
 knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
 library(tidyverse)
+url <- "http://varianceexplained.org/files/Brauer2008_DataSet1.tds"
+raw_data <- read_delim(url, delim='\t')
 ```
 
 ## Introduction
@@ -21,7 +26,7 @@ microarrays to study the relationship between growth rate and genome-wide gene e
 36 yeast cultures which were subject to restrictions of one of 6 nutrients: glucose (G), ammonium (A), sulfate (S), phospate (P), uracil (U) and leucine (L). Each culture was also subject to different growth rates. The objectives of this study were:
 
 1. Finding genes that raise or lower activity in response to growth rate,
-1. Finding geres that respond differently when different nutrients are being limited.
+1. Finding genes that respond differently when different nutrients are being limited.
 
 > I was introduced to this dataset and exercise on David Robinson's [blog](http://varianceexplained.org/r/tidy-genomics/). 
 

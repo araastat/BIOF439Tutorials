@@ -16,6 +16,9 @@ Imports:
     mlbench,
     patchwork,
     learnr,
-    gghighlight
+    gghighlight,
+    naniar,
+    tableone,
+    visdat
 URL: https://github.com/araastat/BIOF439Tutorials
 BugReports: https://github.com/araastat/BIOF439Tutorials/issues

@@ -6,6 +6,9 @@ output:
       allow_skip: true
       css: css/style.css
 runtime: shiny_prerendered
+description: >
+  Learn how to highlight aspects of plots based on data characteristics, as well as create a very basic 
+  R Shiny application
 ---
 
 ```{r setup, include=FALSE}

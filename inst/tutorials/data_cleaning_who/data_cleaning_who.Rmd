@@ -6,6 +6,8 @@ output:
     progressive: true
     allow_skip: true
 runtime: shiny_prerendered
+description: >
+  This tutorial provides a walkthrough for tidying the WHO dataset on TB prevalence provided in the `tidyr` package. It showcases the capabilities of various `dplyr` single-table functions
 ---
 
 ```{r setup, include=FALSE}
