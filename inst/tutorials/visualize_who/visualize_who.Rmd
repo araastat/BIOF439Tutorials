@@ -46,7 +46,7 @@ We will create two data sets from the cleaned data.
 
 **TB counts by country, year, and diagnosis**
 
-```{r grp1, exercise = TRUE}
+```{r grp1, exercise = TRUE, exercise.eval=FALSE}
 by_yr_diagnosis <- cleaned_data %>% 
   group_by(______, ______, _______) %>% 
   summarize(counts = sum(_________, na.rm=T)) %>% # remove missing values before summing
