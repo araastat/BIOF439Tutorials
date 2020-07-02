@@ -99,7 +99,7 @@ was to do this in two steps
 ```{r sep1, exercise = TRUE}
 cleaned_data <- who %>% 
   gather(key = variable, value = counts, starts_with('new')) %>% 
-  separate(variable, into = c('diagnosis', 'gender_age'), sep = ____) %>% 
+  separate(variable, into = c('dummy', 'diagnosis', 'gender_age'), sep = ____) %>% 
   separate(gender_age, into = c('gender', 'age'), sep = ____)
 ```
 
@@ -112,7 +112,7 @@ so at the second `separate`, we only have to separate out gender and age groups
 ```{r sep1-solution}
 cleaned_data <- who %>% 
   gather(key = variable, value = counts, starts_with('new')) %>% 
-  separate(variable, into = c('diagnosis', 'gender_age'), sep = '_') %>% 
+  separate(variable, into = c('dummy', 'diagnosis', 'gender_age'), sep = '_') %>% 
   separate(gender_age, into = c('gender', 'age'), sep = 1)
 ```
 
