@@ -48,7 +48,7 @@ We will create two data sets from the cleaned data.
 
 ```{r grp1, exercise = TRUE, exercise.eval=FALSE}
 by_yr_diagnosis <- cleaned_data %>% 
-  group_by(______, ______, _______) %>% 
+  group_by(key = ______, value = ______, _______) %>% 
   summarize(counts = sum(_________, na.rm=T)) %>% # remove missing values before summing
   ungroup()
 
