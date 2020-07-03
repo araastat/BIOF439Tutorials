@@ -1,0 +1,115 @@
+---
+title: "Slicing and filtering"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    css: css/style.css
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = FALSE, comment = "")
+library(tidyverse)
+
+if(!('palmerpenguins' %in% installed.packages())){
+  remotes::install_github('allisonhorst/palmerpenguins')
+}
+library(palmerpenguins)
+```
+
+## Introduction
+
+The tidyverse provides several ways to programmatically subset rows of a 
+`data.frame`/`tibble` object, based on either position or data values. The 
+main two functions in the repertoire are `slice` and `filter`. Both are amenable
+to pipes, since they take the tibble as the first argument.
+
+Let's start with the _penguins_ data set. This set can be obtained by installing
+the **palmerpenguins** package using `remotes::install_github('allisonhorst/palmerpenguins')`. 
+This dataset had data on the characteristics of three penguin species. 
+
+```{r Slicing-1}
+glimpse(penguins, width=50)
+```
+
+This dataset is pre-loaded in this tutorial. 
+
+## Slicing
+
+### By position
+
+Slicing by position is the same operation as `penguins[____,]`, where we would put some set of indices, like
+`c(1,5,6,21)` or `1:10`. However, the `slice` function is pipe-friendly. 
+
+```{r Slicing-2, exercise=TRUE}
+penguins %>% slice(1, 2, 5, 8)
+```
+
+**Exercise:** Modify the code above to explore how to do different slices by index. You can combine indices like
+`1, 3, 5:8, 12:15` in the same function call. Also note that you don't need the `c()` function to put these together
+as you would for the `penguins[____,]` syntax.
+
+### Slicing parts of the tibble
+
+We might be familiar with the `head` and `tail` functions, which extract the first few and last few lines of 
+the tibble. The functions `slice_head` and `slice_tail` do the same things, but do allow it to worked on grouped data as well. 
+
+```{r Slicing-3}
+penguins %>% slice_head(n = 5)
+```
+
+```{r Slicing-4, exercise=TRUE}
+penguins %>% 
+  group_by(species) %>% 
+  slice_head(n=2)
+```
+
+These functions can also extract a fixed **proportion* of rows.
+
+```{r Slicing-5, exercise=TRUE}
+penguins %>% 
+  group_by(species) %>% 
+  slice_head(prop=0.02)
+```
+
+> The proportions are converted and rounded down to row numbers internally. So if you have 15 rows and ask for 
+10% of the rows, you will get 1 row. 
+
+### Sampling rows
+
+Sampling rows is very useful either when you have a really large data and want to work on a random
+subset first to develop your code, before applying it to the full data, or for sampling-based algorithms
+like the bootstrap. 
+
+```{r Slicing-6, exercise=TRUE}
+set.seed(294)
+penguins %>% 
+  slice_sample(n = 10, replace = FALSE)
+```
+
+You can also sample by group, which can be useful when you want to preserve a certain structure in the sampled
+data. 
+
+```{r Slicing-7, exercise = TRUE}
+set.seed(294)
+penguins %>% 
+  group_by(species) %>% 
+  slice_sample(n = 2, replace = FALSE)
+```
+
+### Slice by value 
+
+You can also slice a tibble based on minimum and maximum values of a variable.
+
+```{r Slicing-8, exercise = TRUE}
+penguins %>% 
+  slice_max(body_mass_g, n = 4)
+```
+
+**Exercise:** Play around to see how grouping data by species or island before slicing changes the results.
+
+
+
+
