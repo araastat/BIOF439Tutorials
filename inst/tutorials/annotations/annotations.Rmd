@@ -159,12 +159,13 @@ Note that we are now saving the plot in the variable `plt`. This can come in use
 
 In order to match the region names with the original graph, we need to do a bit of recoding of the factor.
 
-The following code uses the `factor` function to explicitly reset the labels, and updates the plot just by updating
-the data element of the `plt` object. 
+The following code uses the `factor` function to explicitly reset the labels, and updates the plot just by updating the data element of the `plt` object. 
 
 
-Change the code for data transformation to use pipes and functions from the **forcats** package. 
+We can also do this same data transformation using functions from the ** forcats** package. Change the code for data transformation to use pipes and functions from the **forcats** package. 
 
+Note that we have a bunch of `\n` in the labels. This stands for _newline_ and 
+will put a line break at that point.
 
 ```{r a8, exercise=TRUE, exercise.eval=TRUE, echo = T, exercise.lines = 30, exercise.setup='a7'}
 econ_data$Region <- 
