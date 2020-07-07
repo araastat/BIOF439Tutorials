@@ -19,6 +19,7 @@ Imports:
     gghighlight,
     naniar,
     tableone,
-    visdat
+    visdat,
+    ggrepel
 URL: https://github.com/araastat/BIOF439Tutorials
 BugReports: https://github.com/araastat/BIOF439Tutorials/issues

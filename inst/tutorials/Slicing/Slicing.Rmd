@@ -110,6 +110,16 @@ penguins %>%
 
 **Exercise:** Play around to see how grouping data by species or island before slicing changes the results.
 
+## Filter
+
+The `filter` function is more flexible than `slice`, in that it can combine criteria from several columns. 
+
+For example, if I want to just look at penguins from Torgersen island with a body mass less than 3000 grams, 
+I could write
+
+```{r}
+
+```
 
 
 
