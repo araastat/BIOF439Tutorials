@@ -1,0 +1,217 @@
+---
+title: "Displaying regression results"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    css: css/style.css
+runtime: shiny_prerendered
+description: >
+  Displaying regression results
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+library(learnr)
+mpg1 <- mpg %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate(trans = str_extract(trans, '[:alnum:]+')) %>% 
+  mutate(cyl = as.factor(cyl))
+fit <- lm(cty ~ year + trans + cyl + drv + class, data=mpg1)
+out <- tidy(fit, conf.int=TRUE)
+```
+
+# A regression model
+
+We will start with the `mpg` dataset that comes with the **ggplot2** package, 
+and fit a linear regression model to see how city fuel efficiency depends on
+the year, transmission, number of cylinders, drive and class of vehicle
+
+A lot of the work in this tutorial will use string manipulations using functions
+from the **stringr** package. This package does have a [cheatsheet](https://github.com/rstudio/cheatsheets/raw/master/strings.pdf) that you can download.
+
+## Taking a look at the data
+
+```{r}
+head(mpg)
+```
+
+A few things come to my attention. 
+
+1. The `drv` variable has additional information that we don't need. We just want to keep auto/manual status
+1. We only have 2 years in this data, 1999 and 2008. We probably should convert it to a factor
+1. I'd like to treat the number of cylinders as a factor, since I'm not sure there will be a linear relationship between number of cylinders and fuel efficiency. I can make it linear later if I need to.
+
+## Data munging
+
+```{r g1, eval=TRUE, exercise=TRUE, exercise.eval=TRUE}
+mpg1 <- mpg %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate(trans = str_extract(trans, '[:alnum:]+')) %>% 
+  mutate(cyl = as.factor(cyl))
+```
+
+The one piece you may not know here is `str_extract` and `[:alnum:]`. A good start with this is the _regular expressions_ vignette in the **stringr** package. You can access it in RStudio by going to the Packages pane, search up **stringr**, and then clicking on "User guides, package vignettes and other documentation". Or you can just access the web version [here](https://stringr.tidyverse.org/articles/regular-expressions.html)
+
+There are several pre-built expressions that search for particular kinds of strings. Some useful ones are 
+
++ `[:alnum:]` : letters and numbers
++ `[:alpha:]` : letters
++ `[:digits:]`: digits
++ `[:blank:]` : spaces and tabs   
+
+The `+` at the end means, grab one or more consecutive things of this kind. So that code looks for a contiguous set of letters and numbers starting from the beginning, and stops when it encounters the first non-letter or non-number. If you go back up, you'll realize that this code will stop just at the `(`, which isn't a letter or number.
+
+**Exercise:** Modify the code above to change the search expression from `[:alnum:]+` to something else that will grab the same part of the string.
+
+The hints give a few possibilities
+
+```{r g1-hint-1}
+mutate(mpg, trans = str_extract(trans, '[a-z]+'))
+```
+
+```{r g1-hint-2}
+mutate(mpg, trans = str_extract(trans,'[:alpha:]+'))
+```
+
+```{r g1-hint-3}
+mutate(mpg, trans = str_extract(trans, 'auto|manual'))
+```
+
+
+## Fitting 
+
+```{r}
+mpg1 <- mpg %>% 
+  mutate(year = as.factor(year)) %>% 
+  mutate(trans = str_extract(trans, '[:alnum:]+')) %>% 
+  mutate(cyl = as.factor(cyl))
+fit <- lm(cty ~ year + trans + cyl + drv + class, data=mpg1)
+```
+
+# Looking at the output
+
+```{r}
+library(broom)
+out <- tidy(fit, conf.int = TRUE)
+
+out
+```
+
+We need to fix the `terms` first. The factor variables have the unfortunate default behavior of being represened as <variable><level> with no real formatting. Also we could change the base level of `drv` to `f` (front wheel drive) from `4` (4-wheel drive), but we'll let it be for now.
+
+# Munging output
+
+We're going to build up the code to get this output data where we'd like it.
+
+First, we need to identify the factor variables so that we can change them. Fortunately, R has already stored this information in the `fit` object.
+
+```{r}
+fit$xlevels
+```
+
+So we can see exactly which variables in the model are categorical and what their levels are. 
+
+## Formatting the output
+
+We're going to do a simple transformation: just add a `=` sign between the variable name and level for each categorical variable. Here's one way of approaching this.
+
+```{r eq, exercise=TRUE}
+
+for (n in names(fit$xlevels)){
+  out <- out %>% 
+    mutate(term = ifelse(str_detect(term, n), 
+                         str_replace(term, n, paste(n,'= ')),
+                         term))
+}
+
+```
+
+Comment out parts of this code and really understand what it's doing. The end 
+result gives us
+
+```{r}
+for (n in names(fit$xlevels)){
+  out <- out %>% 
+    mutate(term = ifelse(str_detect(term, n), 
+                         str_replace(term, n, paste(n,'= ')),
+                         term))
+}
+
+out
+```
+
+## Fixing the numbers
+
+We're going to restrict the numbers to 2 decimals
+
+```{r round, exercise=TRUE, exercise.eval=FALSE}
+for(n in names(fit$xlevels)){
+  out <- out %>% 
+    mutate(term = ifelse(str_detect(term, n), 
+                         str_replace(term, n, paste(n,'= ')),
+                         term))
+}
+
+out <- out %>% 
+  mutate_____(________, ~round(., 2))
+
+```
+
+```{r round-solution}
+for(n in names(fit$xlevels)){
+  out <- out %>% 
+    mutate(term = ifelse(str_detect(term, n), 
+                         str_replace(term, n, paste(n,'= ')),
+                         term))
+}
+
+out <- out %>% 
+  mutate_if(is.numeric, ~round(., 2))
+
+```
+
+
+This is quite reasonable for printing now.
+
+```{r}
+# for(n in names(fit$xlevels)){
+#   out <- out %>% 
+#     mutate(term = ifelse(str_detect(term, n), 
+#                          str_replace(term, n, paste(n,'= ')),
+#                          term))
+# }
+# 
+# out <- out %>% 
+#   mutate_if(is.numeric, ~round(., 2))
+
+knitr::kable(out)
+```
+
+
+# Plotting
+
+We're now in a position to plot this out
+
+```{r final, exercise=TRUE, exercise.eval=TRUE}
+# for(n in names(fit$xlevels)){
+#   out <- out %>% 
+#     mutate(term = ifelse(str_detect(term, n), 
+#                          str_replace(term, n, paste(n,'= ')),
+#                          term))
+# }
+# 
+# out <- out %>% 
+#   mutate_if(is.numeric, ~round(., 2))
+# 
+ggplot(out, aes(x = term, y = estimate, 
+                ymin = conf.low, ymax = conf.high))+
+  geom_pointrange() + 
+  coord_flip()
+```
+
+Modify this code to make the plot prettier. The reference level should be 0
+
+
+
