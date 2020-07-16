@@ -1,6 +1,6 @@
 Package: BIOF439Tutorials
 Title: Interactive tutorials for BIOF 439
-Version: 0.2.0.9000
+Version: 0.2.1
 Authors@R: 
     person(given = "Abhijit",
            family = "Dasgupta",
