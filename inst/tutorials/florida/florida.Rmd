@@ -11,6 +11,7 @@ description: >
 ---
 
 ```{r setup, include=FALSE}
+library(learnr)
 library(tidyverse)
 library(sf)
 library(maps)
@@ -89,7 +90,7 @@ ggplot(data = states)+
 
 # Add labels to the map
 
-```{r map1, exercise=TRUE}
+```{r map1, exercise=TRUE, exercise.eval=FALSE}
 ggplot(data = states)+
   geom_sf() +
   geom_text(data = states, _________, 
