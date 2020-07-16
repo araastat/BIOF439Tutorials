@@ -56,8 +56,8 @@ counties <- counties %>%
 election_by_county <- counties %>% 
   left_join(florida_election)
 plt_map <- ggplot(data = world)+
-  geom_sf() + 
-  geom_sf(data = states, fill = NA) + 
+  geom_sf(aes(geometry=geom)) + 
+  geom_sf(data = states, aes(geometry=geometry), fill = NA) + 
   geom_sf(data = election_by_county,
           aes(fill=Gore_perc, 
               geometry=geometry)) + 
