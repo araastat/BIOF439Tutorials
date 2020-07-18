@@ -56,10 +56,10 @@ election_by_county <- counties %>%
   left_join(florida_election)
 plt_map <- ggplot(data = world)+
   geom_sf(aes(geometry=geom)) + 
-  geom_sf(data = states, aes(geometry=geometry), fill = NA) + 
+  geom_sf(data = states, aes(geometry=geom), fill = NA) + 
   geom_sf(data = election_by_county,
           aes(fill=Gore_perc, 
-              geometry=geometry)) + 
+              geometry=geom)) + 
   geom_label(data = states %>% 
                dplyr::filter(ID != 'Florida'), #<<
              aes(X, Y, label = ID), #<<
