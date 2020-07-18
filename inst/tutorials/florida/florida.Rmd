@@ -32,7 +32,6 @@ election_by_county <- counties %>%
   left_join(florida_election)
 
 ```
-
 # Introduction
 
 We're going to end up with a choropleth map that shows the percentage of 
@@ -147,7 +146,6 @@ head(election_by_county, 2)
 ```
 
 ```{r g3-solution}
-florida_election <- readRDS(fs::path('data', 'florida_election.rds'))
 election_by_county <- counties %>% 
   left_join(florida_election)
 head(election_by_county, 2)
