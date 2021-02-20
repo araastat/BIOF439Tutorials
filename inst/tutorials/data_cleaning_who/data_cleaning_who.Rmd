@@ -33,7 +33,7 @@ Let's take a peek at this data
 ```{r, echo=FALSE}
 data(who)
 who %>% summarise_all(class) %>% 
-  gather(Variable, Type)
+  pivot_longer(names_to="Variable", values_to='Type', cols = everything())
 ```
 
 **Top 3 rows**
@@ -73,7 +73,7 @@ The first step in tidying the data is to create 3 columns for method of diagnosi
 
 ```{r pivot, exercise=TRUE}
 cleaned_data <- who %>% 
-  gather(key = variable, value = counts, ____________)
+  pivot_longer(names_to = "variable", values_to = "counts", cols = ____________)
 ```
 
 <div id="pivot-hint">
@@ -98,7 +98,7 @@ was to do this in two steps
 
 ```{r sep1, exercise = TRUE}
 cleaned_data <- who %>% 
-  gather(key = variable, value = counts, starts_with('new')) %>% 
+  pivot_longer(names_to = 'variable', values_to = 'counts', starts_with('new')) %>% 
   separate(variable, into = c('dummy', 'diagnosis', 'gender_age'), sep = ____) %>% 
   separate(gender_age, into = c('gender', 'age'), sep = ____)
 ```
@@ -111,7 +111,7 @@ so at the second `separate`, we only have to separate out gender and age groups
 
 ```{r sep1-solution}
 cleaned_data <- who %>% 
-  gather(key = variable, value = counts, starts_with('new')) %>% 
+  pivot_longer(names_to = 'variable', values_to = 'counts', starts_with('new')) %>% 
   separate(variable, into = c('dummy', 'diagnosis', 'gender_age'), sep = '_') %>% 
   separate(gender_age, into = c('gender', 'age'), sep = 1)
 ```
@@ -155,9 +155,10 @@ very much like what we wrote earlier for the pattern of entries in `variable`.
 
 ```{r, echo=TRUE}
 cleaned_data <- who %>% 
-  gather(key = variable, value = counts, starts_with('new')) %>% 
+  pivot_longer(cols=starts_with('new'), names_to = 'variable', values_to = 'counts') %>% 
+  # gather(key = variable, value = counts, starts_with('new')) %>% 
   extract(variable, into = c('diagnosis','gender','age'),
-          regex = 'new_([:lower:]+)_([mf])([:digit:]+)')
+          regex = 'new_([a-z]+)_([mf])([0-9]+)')
 head(cleaned_data)
 ```
 
@@ -165,7 +166,7 @@ Pretty cool!!!
 
 ### Method 3: `pivot_longer`
 
-The new `pivot_longer` function in **tidyr** is quite flexible, and allows you to 
+The `pivot_longer` function in **tidyr** is quite flexible, and allows you to 
 combine both the `gather` and `extract` steps in one go.
 
 ```{r, echo=TRUE}
@@ -173,7 +174,7 @@ cleaned_data <- who %>%
   pivot_longer(cols = starts_with("new"),
                names_to = c('diagnosis','gender','age'),
                names_prefix = 'new_', # this gets removed first, so don't include in regex
-               names_pattern = '([:lower:]+)_([mf])([:digit:]+)',
+               names_pattern = '([a-z]+)_([mf])([0-9]+)',
                values_to = 'counts')
 head(cleaned_data)
 ```

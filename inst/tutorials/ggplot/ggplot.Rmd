@@ -286,7 +286,7 @@ Ooh!!! This is not what we wanted!!
 
 ### Create a boxplot, 2nd attempt
 
-It turns out that the `pregant` variable is of type `numeric`, while what we 
+It turns out that the `pregnant` variable is of type `numeric`, while what we 
 need is a `factor` type, which represents categorical variables. We can do this 
 conversion on the fly.
 
