@@ -78,7 +78,7 @@ Play around with the size and stroke options in `geom_point` to change the look 
 ggplot(econ_data,
        aes(x = CPI, y = HDI, color=Region))+
   geom_smooth(color='red', se=F, method = 'lm', formula = y~poly(x,2)) + 
-  geom_point(shape = 1, size = 2, stroke=1)#<<
+  geom_point(shape = 1, size = 2, stroke=1)
 
 ```
 
@@ -131,7 +131,7 @@ You can also play around with the text color to see what happens. `gray20` means
 
 We need to move the labels off the actual points to make them easier to read. We'll use the **ggrepel** library to help make sure we have less overlap in the graph elements
 
-```{r a7, exercise=TRUE, exercise.eval=TRUE, echo = T}
+```{r a7, exercise=TRUE, exercise.eval=FALSE, echo = T}
 library(ggrepel) 
 pointsToLabel <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
                    "Afghanistan", "Congo", "Greece", "Argentina", "Brazil",
@@ -147,7 +147,7 @@ pointsToLabel <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
             color = 'gray20', 
             force=10,
             data = econ_data %>% 
-              dplyr::filter(Country %in% pointsToLabel)))
+              dplyr::____(________)))
 ```
 
 Play around with the `force=` option to see how that will affect where the labels are placed. This parameter 
@@ -274,7 +274,7 @@ the factor levels. You can specify colors in 3 ways
     - These are 6 alphanumeric characters (0-9, A-F) that also specify red, green and blue levels, with 2 characters for each color
     - Hex codes or hexadecimal codes, allow for 16 possibilities per "digit", so 0,1, ..., 9, A, ..., F gives 16 values. 2 such digits gives 16x16=256 possible values.
     
-How do you figure these out? Couple of sites I use are [ttps://www.color-hex.com](ttps://www.color-hex.com) and 
+How do you figure these out? Couple of sites I use are [https://www.color-hex.com](https://www.color-hex.com) and 
 [https://www.w3schools.com/colors/colors_picker.asp](https://www.w3schools.com/colors/colors_picker.asp)
 
 ```{r a10, exercise=TRUE, exercise.eval=TRUE, echo=TRUE, exercise.setup = 'a10-setup'}
