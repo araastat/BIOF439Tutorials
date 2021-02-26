@@ -10,11 +10,10 @@ runtime: shiny_prerendered
 
 ```{r setup, include=FALSE}
 library(learnr)
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, fig.align = 'center')
 library(tidyverse)
 econ_data <- read_csv('www/EconomistData.csv')
 theme_set(theme_bw())
-
 ```
 
 
@@ -121,7 +120,7 @@ ggplot(econ_data,
   geom_text(aes(label=Country),
             color = 'gray20', 
             data = econ_data %>% 
-              dplyr::filter(Country %in% pointsToLabel))
+              filter(Country %in% pointsToLabel))
 ```
 
 You can also play around with the text color to see what happens. `gray20` means 20% gray. 
@@ -131,7 +130,7 @@ You can also play around with the text color to see what happens. `gray20` means
 
 We need to move the labels off the actual points to make them easier to read. We'll use the **ggrepel** library to help make sure we have less overlap in the graph elements
 
-```{r a7, exercise=TRUE, exercise.eval=FALSE, echo = T}
+```{r a7, echo=TRUE, exercise=TRUE}
 library(ggrepel) 
 pointsToLabel <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
                    "Afghanistan", "Congo", "Greece", "Argentina", "Brazil",
@@ -139,6 +138,9 @@ pointsToLabel <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
                    "Botswana", "Cape Verde", "Bhutan", "Rwanda", "France",
                    "United States", "Germany", "Britain", "Barbados", "Norway", "Japan",
                    "New Zealand", "Singapore")
+econ_data1 <- econ_data %>% 
+  dplyr::filter(Country %in% pointsToLabel)
+
 (plt <- ggplot(econ_data,
        aes(x = CPI, y = HDI, color=Region))+
   geom_smooth(color='red', se=F, method='lm', formula = y~poly(x,2)) + 
@@ -146,8 +148,7 @@ pointsToLabel <- c("Russia", "Venezuela", "Iraq", "Myanmar", "Sudan",
   geom_text_repel(aes(label=Country),#<<
             color = 'gray20', 
             force=10,
-            data = econ_data %>% 
-              dplyr::____(________)))
+            data = econ_data1))
 ```
 
 Play around with the `force=` option to see how that will affect where the labels are placed. This parameter 
